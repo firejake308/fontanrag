@@ -9,4 +9,15 @@
 - it looks like each note has at the bottom the time that it was signed or addended
     - and it follows a strict template, so we shouldn't need an LLM for this
     - but we can use it to test our pipeline for adding a column to the db
-    
+- great! the times have been added
+    - we used separate columns for sign, addend, or extracted via LLM
+    - we also actually only used dates. We should probably refactor the SQLite db to reflect that in the column names
+- but the next step is to see if we can make this part of a bigger pipeline
+    - so we'll start with the question, "Over what time period was this data collected?"
+    - and we have to create a series of prompts that will generate the extraction
+        - the 1st prompt should show the db tables and ask what columns would be helpful
+        - the 2nd prompt should show the table schemas and ask what new columns are needed
+        - the 3rd prompt should write the prompt to extract the information from the note
+    - we'll have to define code to extract different data types from strings, and make the 3rd prompt aware of what format is expected
+    - we might have to include few-shot examples, but we'll try to do it without
+
