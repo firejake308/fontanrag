@@ -1,0 +1,18 @@
+-- Create the patients table
+CREATE TABLE patients (
+    MRN INT PRIMARY KEY,
+    LAST_NAME VARCHAR(255),
+    FIRST_NAME VARCHAR(255),
+    DOB DATE,
+    SEX CHAR(1),
+    LANG VARCHAR(50),
+    PATIENT_STATUS CHAR(1),
+    CURRENT_AGE DECIMAL(5,2)
+);
+
+-- Create the notes table
+CREATE TABLE notes (
+    FILE_NAME VARCHAR(255) PRIMARY KEY,
+    MRN INT,
+    FOREIGN KEY (MRN) REFERENCES patients(MRN)
+);

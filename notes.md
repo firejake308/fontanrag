@@ -1,0 +1,12 @@
+- so we have 29,294 notes so far. The rest are still decompressing
+- there's an Excel sheet with some patient characteristics like name, MRN, DOB, CURRENT AGE
+- let's start by making a SQLite database
+    - or alternatively, we could use the JSON and add fields
+    - let's think about which would be slower, ALTER COLUMN, or writing JSON
+    - yeah SQL is faster for sure
+- okay, so now I have the inital db
+- next, I want to add the time that each note was created
+- it looks like each note has at the bottom the time that it was signed or addended
+    - and it follows a strict template, so we shouldn't need an LLM for this
+    - but we can use it to test our pipeline for adding a column to the db
+    
