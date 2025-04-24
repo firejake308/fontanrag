@@ -31,9 +31,6 @@ def extract_note_time(texts: List[str]) -> List[str]:
     with torch.no_grad():
         responses = pipe(messages, max_new_tokens=32)
 
-    torch.cuda.empty_cache()
-    torch.cuda.ipc_collect()
-
     # Extract the generated text
     out = [response[0]["generated_text"][-1]["content"].strip()
            for response in responses]

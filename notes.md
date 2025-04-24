@@ -12,6 +12,52 @@
 - great! the times have been added
     - we used separate columns for sign, addend, or extracted via LLM
     - we also actually only used dates. We should probably refactor the SQLite db to reflect that in the column names
+- so slight change in plans, I think it'll be faster to get the first paper out if I hand-write the prompts to extract the 23 variables in the Mayo algorithm. This is a slightly different spin, where we're using LLMs to extract fixed data from the notes instead of leaving it open-ended, but I think it makes sense to start here.
+- the biggest problem is that most of the variables are patient-level
+
+- currently working on the Afib extraction task
+    - I've identified and labeled 16 notes for whether or not they actually have Afib
+    - notes were selected based on searching for potential positive strings to enrich results
+    - validation_set.csv has 9 True AF dx and 7 false positives based on string search only
+    - next, I'm going to try the extract_boolean pipeline with various prompts and models, and I'll document the results here.
+    - first, we have "meta-llama/Llama-3.1-8B-Instruct" with the prompt "Tell me if the following note contains definitive evidence that the patient has {condition}. Reply with only 'Yes', 'No', or 'Not sure'. Here is the note:\n---\n{text[:8000]}"
+        - accuracy: 0.6250, 0.6875, 0.6250, 0.6875, 0.6875
+    - next, we'll try "Qwen/Qwen2.5-32B-Instruct-GPTQ-Int4" with the same prompt
+        - accuracy: 0.4375, 0.4375
+    - since that clearly didn't work, let's try "unsloth/phi-4-bnb-4bit"
+        - accuracy: 0.5000
+    - "johnsnowlabs/JSL-MedLlama-3-8B-v17-8bits"
+        - accuracy: 0.5000, 0.5000
+    - "ConfidentialMind/Mistral-Small-24B-Instruct-2501_GPTQ_G128_W4A16_MSE"
+        - accuracy: 0.5000, 0.5000
+    - I had to limit to last 1000 chars for "Satwik11/Llama-3.3-70B-Instruct-AutoRound-GPTQ-4bit"
+        - accuracy: 0.5625
+    - Going back to Llama-3.1-8B, using 8k chars, changing to "has or has ever had"
+        - accuracy: 0.6875, 0.6875, 0.6875, 0.6875
+    - what if I just tell it to "Think carefully, and once you are sure, reply with only 'Yes', 'No', or 'Not sure'"
+        - accuracy: 0.5624
+    - "Tell me if the following note contains explicit evidence that the patient has, or has ever had, {condition}. Explain your reasoning, and then report your final answer on a new line containing only 'Yes', 'No', or 'Not sure'. Here is the note:\n---\n{text[-8000:]}"
+    - "Tell me if the following note contains explicit evidence that the patient has, or has ever had, {condition}. Explain your reasoning, and then report your final answer on a new line containing only 'Final Answer: Yes/No/Not sure'. Remember that medical abbreviations depend on context, and that presence of {condition} in either the past or the present should both result in a final answer of Yes. Here is the note:\n---\n{text[-8000:]}"
+        - accuracy: 0.7500, 0.5625, 0.6875
+    - say it again at the end: "Tell me if the following note contains explicit evidence that the patient has, or has ever had, {condition}. Remember that medical abbreviations depend on context, and that presence of {condition} in either the past or the present should both result in a final answer of Yes. If something in the note is always connected with {condition}, that would also count as explicit evidence, but something that is merely associated with {condition} would not. Here is the note:\n---\n{text[-8000:]}\n---\nBased on that note, do you think the note has explicit evidence of {condition}? Explain your reasoning, and then report your final answer on a separate line containing only 'Final Answer: Yes/No/Not sure'."
+        - accuracy: 0.7500, 0.8125, 0.6875, 0.6250, 0.6875
+    - rewording the question "Based on the following note from a pediatric cardiology unit, can you conclude that the patient has, or has ever had, {condition}? Remember that medical abbreviations depend on context, and that presence of {condition} in either the past or the present should both result in a final answer of Yes. Here is the note:\n---\n{text[-8000:]}\n---\nBased on that note, can you conclude that the patient has, or has ever had, {condition}? Explain your reasoning, and then report your final answer on a separate line containing only 'Final Answer: Yes/No/Not sure'."
+        - accuracy: 0.5625
+    - explicit mentions only: "Based on the following note from a pediatric cardiology unit, can you conclude that the patient has, or has ever had, {condition}? Remember that medical abbreviations depend on context, and that presence of {condition} in either the past or the present should both result in a final answer of Yes. Ignore things that are associated with {condition}; look only for explicit mentions of {condition}. Here is the note:\n---\n{text[-8000:]}\n---\nBased on that note, can you conclude that the patient has, or has ever had, {condition}? Explain your reasoning, and then report your final answer on a separate line containing only 'Final Answer: Yes/No/Not sure'."
+        - too long, had to increase token limit
+        - accuracy: 0.6875, 0.4375
+    - add definitively: "Based on the following note from a pediatric cardiology unit, can you conclude that the patient has, or has ever had, {condition}? Remember that medical abbreviations depend on context, and that presence of {condition} in either the past or the present should both result in a final answer of Yes. Here is the note:\n---\n{text[-8000:]}\n---\nBased on that note, can you definitively conclude that the patient has, or has ever had, {condition}? Explain your reasoning, and then report your final answer on a separate line containing only 'Final Answer: Yes/No/Not sure'."
+        - accuracy: 0.5625
+    - "Read the following note from a pediatric cardiology unit. Does the note explicitly state that the patient has, or has ever had, {condition}? Remember that medical abbreviations depend on context, and that presence of {condition} in either the past or the present should both result in a final answer of Yes. Here is the note:\n---\n{text[-8000:]}\n---\nNow that you have read the note, does it explicitly state that the patient has, or has ever had, {condition}? Explain your reasoning, and then report your final answer on a separate line containing only 'Final Answer: Yes/No/Not sure'."
+        - accuracy: 0.8750, 0.8125, 0.7500, 0.8750, 0.8750
+    - abbreviation list for conditions
+        - accuracy: 0.7500
+    - more general abbreviation list: 
+        - slow as heck
+        - otherwise same prompt as above
+        - accuracy: 0.9375, 0.7500, 0.7500, 0.8125, 0.9375
+
+## Later
 - but the next step is to see if we can make this part of a bigger pipeline
     - so we'll start with the question, "Over what time period was this data collected?"
     - and we have to create a series of prompts that will generate the extraction
