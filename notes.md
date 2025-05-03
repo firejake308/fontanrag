@@ -56,6 +56,21 @@
         - slow as heck
         - otherwise same prompt as above
         - accuracy: 0.9375, 0.7500, 0.7500, 0.8125, 0.9375
+        - exclusion for FHx after reviewing smoking data: 0.8750
+    - smoking:
+        - one problem is that we have some notes for newborns where the mother did smoke during pregnancy. I labeled those as false since it's technically not personal hx, but maybe they should count as true for newborns.
+        - accuracy: 0.8500, 0.8000, 0.9500
+    - vfib
+        - spot-checked one, wasn't absolutely sure but called it yes anyway. Check false pos/neg matrix and maybe adjust prompt w smth like "Only answer Yes if you are absolutely sure."
+        - accuracy: 0.7600, 0.8400
+    - vfib w quant
+        - accuracy: 0.7200
+        - 25 notes in 300 s, same speed as un-quantized version
+    - vfib w Llama-3.2-3B
+        - accuracy: 0.8000
+        - 25 notes in 160 sec
+    - I tried ModelCloud/Llama-3.2-3B-Instruct-gptqmodel-4bit-vortex-v3, but it was somehow slower, at like 430 s. My guess is that the triton-windows library is not well optimized
+
 
 ## Later
 - but the next step is to see if we can make this part of a bigger pipeline

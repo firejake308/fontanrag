@@ -3,28 +3,35 @@ from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM, AutoProc
 import torch
 
 # Create tokenizer and set pad token
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.1-8B-Instruct")
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-3B-Instruct")
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
 # Create pipeline for text generation
 pipe = pipeline("text-generation", 
-               model="meta-llama/Llama-3.1-8B-Instruct",
+               model="meta-llama/Llama-3.2-3B-Instruct",
                tokenizer=tokenizer,
                use_fast=True,
                device_map="auto")
+
+cached_abbreviations = {}
 
 def extract_boolean(texts: List[str], condition: str) -> List[str]:
     '''
     Extract whether the texts contain evidence for a given condition. Return a list of True/False/None.
     '''
-    # generate a list of abbreviations
-    messages = [
-        {"role": "user", "content": f"What are some medical abbreviations that could be used to refer to {condition}? And do those abbreviations have any other possible meeanings? These will be used to interpret notes from a pediatric cardiology ICU, so try to think of relevant abbreviations that could show up on such notes."}
-    ]
-    with torch.no_grad():
-        response = pipe(messages, max_new_tokens=512)
-    abbrev_list = response[0]["generated_text"][-1]["content"].strip()
+    if condition in cached_abbreviations:
+        abbrev_list = cached_abbreviations[condition]
+    else:
+        # generate a list of abbreviations
+        messages = [
+            {"role": "user", "content": f"What are some medical abbreviations that could be used to refer to {condition}? And do those abbreviations have any other possible meeanings? These will be used to interpret notes from a pediatric cardiology ICU, so try to think of relevant abbreviations that could show up on such notes."}
+        ]
+        with torch.no_grad():
+            response = pipe(messages, max_new_tokens=512)
+        abbrev_list = response[0]["generated_text"][-1]["content"].strip()
+        cached_abbreviations[condition] = abbrev_list
+
 
     # Format the prompt, truncating to the first 8000 characters
     messages = [
@@ -33,7 +40,7 @@ def extract_boolean(texts: List[str], condition: str) -> List[str]:
             {"role": "assistant", "content": abbrev_list},
             {
                 "role": "user",
-                "content": f"Read the following note from a pediatric cardiology unit. Does the note explicitly state that the patient has, or has ever had, {condition}? Remember that medical abbreviations depend on context, and that presence of {condition} in either the past or the present should both result in a final answer of Yes. Here is the note:\n---\n{text[-8000:]}\n---\nNow that you have read the note, does it explicitly state that the patient has, or has ever had, {condition}? Explain your reasoning, and then report your final answer on a separate line containing only 'Final Answer: Yes/No/Not sure'."
+                "content": f"Read the following note from a pediatric cardiology unit. Does the note explicitly state that the patient has, or has ever had, {condition}? Remember that medical abbreviations depend on context, and that presence of {condition} in either the past or the present should both result in a final answer of Yes. Include only personal history and not family history. Here is the note:\n---\n{text[-8000:]}\n---\nNow that you have read the note, does it explicitly state that the patient has, or has ever had, {condition}? Explain your reasoning, and then report your final answer on a separate line containing only 'Final Answer: Yes/No/Not sure'."
             }]
     for text in texts]
     
