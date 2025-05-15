@@ -71,6 +71,23 @@
         - 25 notes in 160 sec
     - I tried ModelCloud/Llama-3.2-3B-Instruct-gptqmodel-4bit-vortex-v3, but it was somehow slower, at like 430 s. My guess is that the triton-windows library is not well optimized
 
+- so if we run each variable separately, it'll take like a month to run on our 29k note sample, even with the 3B model and caching abbreviations. We're going to need to make this a one-shot pipeline in order to make the timeline feasible.
+    - llama-3B with abbreviations list
+        - accuracy: 0.7747
+        - time: 740 s
+    - llama-3B without abbreviations list
+        - accuracy: 0.7444
+        - time: 540 s
+    - llama-8B without abbreviations list
+        - accuracy: 0.8683
+        - time: 500 s
+    - Qwen3-8B without abbreviations, turning off thinking
+        - accuracy: 0.9118, 0.9092
+        - time: 540 s, 540 s
+    - try first 4k and last 4k char's instead of only the last 8k
+        - accuracy: 0.9322, 0.9322
+        - time: 550 s, 530 s
+
 
 ## Later
 - but the next step is to see if we can make this part of a bigger pipeline

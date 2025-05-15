@@ -1,4 +1,8 @@
 CardioIMS/
+test_set.*
+validation_set.*
+validation_results.csv
+
 venv/
 __pycache__/
 

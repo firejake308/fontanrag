@@ -1,4 +1,4 @@
 CardioIMS/
-test_set.txt
+test_set.*
 validation_set.*
 validation_results.csv
