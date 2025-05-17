@@ -107,6 +107,11 @@
         - time: 560
         - sensitivity: 0.96
         - specificity: 0.86
+    - "If you are not sure whether a ventricular tachycardia was sustained or non-sustained, apply the heuristic that defibrillation is most often used for sustained V-tach."
+        - accuracy: 0.9501
+        - time: 560
+        - sensitivity: 0.96
+        - specificity: 0.88
 
 ## Later
 - but the next step is to see if we can make this part of a bigger pipeline
