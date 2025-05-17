@@ -22,69 +22,109 @@ pipe = pipeline("text-generation",
                use_fast=True,
                device_map="auto")
 
-cached_abbreviations = []
-
-CONDITIONS = [
-    'heart failure', 'atrial arrhythmia', 'atrial fibrillation', 'atrial flutter', 'ventricular arrhythmia',
+# Split conditions into arrhythmias and other conditions
+ARRHYTHMIA_CONDITIONS = [
+    'atrial arrhythmia', 'atrial fibrillation', 'atrial flutter', 'ventricular arrhythmia',
     'sustained ventricular tachycardia', 'non-sustained ventricular tachycardia', 
-    'ventricular fibrillation/unplanned cardiac arrest', 'chronic hypertension', 'hyperlipidemia', 'diabetes',
+    'ventricular fibrillation/unplanned cardiac arrest'
+]
+
+OTHER_CONDITIONS = [
+    'heart failure', 'chronic hypertension', 'hyperlipidemia', 'diabetes',
     'smoking', 'obesity', 'coronary artery disease', 'venous thrombosis', 'intracardiac thrombus', 'stroke',
     'pulmonary embolism', 'obstructive sleep apnea', 'chronic kidney disease', 'infective endocarditis', 'protein-losing enteropathy', 'cirrhosis'
 ]
 
-def extract_all(texts: List[str]) -> List[str]:
-    '''
-    Extract all 22 conditions from the given texts. Returns a dictionary of True/False values.
-    '''
-    conditions_list = "CONDITIONS:\n - " + '\n - '.join(CONDITIONS)
+CONDITIONS = [*ARRHYTHMIA_CONDITIONS, *OTHER_CONDITIONS]
 
-    # Format the prompt, truncating the note to the last 8000 characters of the note
-    messages = []
+def extract_all(texts: List[str]) -> List[dict]:
+    '''
+    Extract all conditions from the given texts in two separate runs - one for arrhythmias and one for other conditions.
+    Returns a list of dictionaries with True/False values.
+    '''
+    arrhythmia_list = "CONDITIONS:\n - " + '\n - '.join(ARRHYTHMIA_CONDITIONS)
+    other_conditions_list = "CONDITIONS:\n - " + '\n - '.join(OTHER_CONDITIONS)
+
+    # Format the prompts for both runs
+    arrhythmia_messages = []
+    other_conditions_messages = []
+    
     for text in texts:
         truncated_text = text if len(text) < 8000 else text[:4000] + "\n...\n" + text[-4000:]
-        messages.append(
-        [
+        
+        # Message for arrhythmias
+        arrhythmia_messages.append([
             {
                 "role": "user",
-                "content": f"Read the following note from a pediatric cardiology unit. Does the note explicitly state that the patient has, or has ever had, any of the conditions in the list below?\n" + conditions_list 
-                + f"\n\nRemember that medical abbreviations depend on context, and that presence of a condition in either the past or the present should both result in an answer of True. Include only personal history and not family history. Here is the note:\n---\n{truncated_text}\n---\nNow that you have read the note, decide whether or not the note explicitly states that the patient has, or has ever had, each condition. Answer in the form of a JSON dictionary of the form\n" + 
+                "content": f"Read the following note from a pediatric cardiology unit. Does the note explicitly state that the patient has, or has ever had, any of the arrhythmias in the list below?\n" + arrhythmia_list 
+                + f"\n\nInclude only personal history and not family history. A few tips: Atrial arrythmias include atrial fibrillation, atrial flutter, and also supraventricular tachycardia (SVT), intraatrial reentrant tachycardia (IART), AVNRT, or sinus bradycardia. If you see a ventricular tachycardia, do your best to decide whether it was sustained or non-sustained. AV blocks and junctional rhythms do not count as either atrial or ventricular arrhythmias.\n\nHere is the note:\n---\n{truncated_text}\n---\nNow that you have read the note, decide whether or not the note explicitly states that the patient has, or has ever had, each arrhythmia. Answer in the form of a JSON dictionary of the form\n" + 
 '''{
-    "heart failure": false,
     "atrial arrhythmia": true,
     "atrial fibrillation": false,
     "atrial flutter": true,
     ...
 }
 '''
+                + "Set each arrhythmia to true if and only if you are absolutely sure the patient has it. Set it to false if the condition has been ruled out, or if it is not mentioned in the note, or if there is any ambiguity."
+            }])
+        
+        # Message for other conditions
+        other_conditions_messages.append([
+            {
+                "role": "user",
+                "content": f"Read the following note from a pediatric cardiology unit. Does the note explicitly state that the patient has, or has ever had, any of the conditions in the list below?\n" + other_conditions_list 
+                + f"\n\nRemember that medical abbreviations depend on context, and that presence of a condition in either the past or the present should both result in an answer of True. Include only personal history and not family history.\nA few tips: If a patient has failing physiology or depressed ventricular function, those are equivalent to explicitly stating that the patient has heart failure. Also, a thrombus in one of the atria or ventricles counts as an intracardiac thrombus; a thrombus in the central veins, deep veins, or superficial veins counts as a venous thrombosis; and a thrombus in a coronary artery indicates coronary artery disease. DVT prophylaxis does not count as venous thrombosis; venous thrombosis is only true when the patient actually has a clot.\nHere is the note:\n---\n{truncated_text}\n---\nNow that you have read the note, decide whether or not the note explicitly states that the patient has, or has ever had, each condition. Answer in the form of a JSON dictionary of the form\n" + 
+'''{
+    "heart failure": true,
+    "chronic hypertension": true,
+    "hyperlipidemia": false,
+    ...
+}
+'''
                 + "Set each condition to true if and only if you are absolutely sure the patient has it. Set it to false if the condition has been ruled out, or if it is not mentioned in the note, or if there is any ambiguity."
             }])
     
-    # Generate response
+    # Generate responses for both runs
     with torch.no_grad():
-        responses = pipe(messages, max_new_tokens=1600)
+        arrhythmia_responses = pipe(arrhythmia_messages, max_new_tokens=800)
+        other_conditions_responses = pipe(other_conditions_messages, max_new_tokens=800)
 
-    # Extract the generated text
-    out = [response[0]["generated_text"][-1]["content"].strip()
-           for response in responses]
+    # Extract the generated text from both runs
+    arrhythmia_out = [response[0]["generated_text"][-1]["content"].strip()
+                     for response in arrhythmia_responses]
+    other_conditions_out = [response[0]["generated_text"][-1]["content"].strip()
+                          for response in other_conditions_responses]
     
-    # convert to dictionary
+    # Process both sets of responses
     processed = []
-    for x in out:
-        start = x.find('{')
-        end = x.rfind('}')
-        if start != -1 and end != -1:
-            json_substr = x[start:end+1]
+    for arrhythmia_text, other_conditions_text in zip(arrhythmia_out, other_conditions_out):
+        # Process arrhythmia results
+        arrhythmia_start = arrhythmia_text.find('{')
+        arrhythmia_end = arrhythmia_text.rfind('}')
+        arrhythmia_dict = {}
+        if arrhythmia_start != -1 and arrhythmia_end != -1:
             try:
-                processed.append(json.loads(json_substr))
+                arrhythmia_dict = json.loads(arrhythmia_text[arrhythmia_start:arrhythmia_end+1])
             except Exception as e:
-                print(f"Error parsing JSON: {e}")
-                print(json_substr)
-            processed.append(None)
-        else:
-            print(f"Unexpected LLM output: {x}")
-            processed.append(None)
+                print(f"Error parsing arrhythmia JSON: {e}")
+                print(arrhythmia_text[arrhythmia_start:arrhythmia_end+1])
+        
+        # Process other conditions results
+        other_start = other_conditions_text.find('{')
+        other_end = other_conditions_text.rfind('}')
+        other_dict = {}
+        if other_start != -1 and other_end != -1:
+            try:
+                other_dict = json.loads(other_conditions_text[other_start:other_end+1])
+            except Exception as e:
+                print(f"Error parsing other conditions JSON: {e}")
+                print(other_conditions_text[other_start:other_end+1])
+        
+        # Combine both dictionaries
+        combined_dict = {**arrhythmia_dict, **other_dict}
+        processed.append(combined_dict if combined_dict else None)
+    
     return processed
-
 
 # for testing and debugging
 if __name__ == "__main__":

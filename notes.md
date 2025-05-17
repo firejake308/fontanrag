@@ -87,7 +87,26 @@
     - try first 4k and last 4k char's instead of only the last 8k
         - accuracy: 0.9322, 0.9322
         - time: 550 s, 530 s
-
+    - two separate messages for arrythmias and everything else
+        - accuracy: 0.9386
+        - time: 590
+        - sensitivity: 0.96
+        - specificity: 0.72
+    - custom arrhythmia instructions
+        - accuracy: 0.9361
+        - time: 560 s
+        - sensitivity: 0.96
+        - specificity: 0.77
+    - tips instead of notes, arrhythmias instead of conditions
+        - accuracy: 0.9373
+        - time: 570
+        - sensitivity: 0.96
+        - specificity: 0.78
+    - removing extra instruction about ventricular arrhythmia, fixing typos
+        - accuracy: 0.9476
+        - time: 560
+        - sensitivity: 0.96
+        - specificity: 0.86
 
 ## Later
 - but the next step is to see if we can make this part of a bigger pipeline
