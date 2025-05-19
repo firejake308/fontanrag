@@ -112,6 +112,11 @@
         - time: 560
         - sensitivity: 0.96
         - specificity: 0.88
+    - true/false, attempting to disambiguate thrombi
+        - accuracy: 0.9565
+        - time: 710
+        - sensitivity: 0.96
+        - specificity: 0.88
 
 ## Later
 - but the next step is to see if we can make this part of a bigger pipeline
