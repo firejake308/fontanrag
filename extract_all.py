@@ -81,8 +81,16 @@ def extract_all(texts: List[str], verbose=False) -> List[dict]:
         other_conditions_messages.append([
             {
                 "role": "user",
-                "content": f"Read the following note from a pediatric cardiology unit. Does the note explicitly state that the patient has, or has ever had, any of the conditions in the list below?\n" + other_conditions_list 
-                + f"\n\nRemember that medical abbreviations depend on context, and that presence of a condition in either the past or the present should both result in an answer of True. Include only personal history and not family history.\nA few tips: If a patient has failing physiology or depressed ventricular function, those are equivalent to explicitly stating that the patient has heart failure. Also, to help clarify the different thrombotic conditions: a thrombus in one of the atria or ventricles is an intracardiac thrombus; a thrombus in any of the veins prior to the right atrium is a venous thrombosis; and a thrombus in one of the coronary arteries would indicate coronary artery disease, not an intracardiac thrombus. DVT prophylaxis does not count as venous thrombosis; venous thrombosis is only true when the patient actually has a clot.\nHere is the note:\n---\n{truncated_text}\n---\nNow that you have read the note, decide whether or not the note explicitly states that the patient has, or has ever had, each condition. Answer in the form of a JSON dictionary of the form\n" + 
+                "content": f"Read the following note from a pediatric cardiology unit. Does the note explicitly state fthat the patient has, or has ever had, any of the conditions in the list below?\n{other_conditions_list}"
+                "\n\nRemember that medical abbreviations depend on context,"
+                " and that presence of a condition in either the past or the present should both result in an answer of true."
+                " Include only personal history and not family history."
+                "\nA few tips: If a patient has failing physiology or depressed ventricular function, those are equivalent to explicitly stating that the patient has heart failure."
+                " Also, to help clarify the different thrombotic conditions: a thrombus in one of the atria or ventricles is an intracardiac thrombus; a thrombus in any of the veins prior to the right atrium is a venous thrombosis; and a thrombus in one of the coronary arteries would indicate coronary artery disease, not an intracardiac thrombus."
+                " DVT prophylaxis does not count as venous thrombosis; venous thrombosis is only true when the patient actually has a clot."
+                f"\nHere is the note:\n---\n{truncated_text}\n---\n"
+                "Now that you have read the note, decide whether or not the note explicitly states that the patient has, or has ever had, each condition."
+                " Answer in the form of a JSON dictionary of the form\n" + 
 '''{
     "heart failure": true/false,
     "chronic hypertension": true/false,
