@@ -2,3 +2,8 @@ CardioIMS/
 test_set.*
 validation_set.*
 validation_results.csv
+latest_notes_per_patient.csv
+latest_notes_results.csv
+first_notes_per_patient.csv
+first_notes_results.csv
+spot_check*.csv
