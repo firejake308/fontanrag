@@ -45,7 +45,7 @@ def extract_boolean(texts: List[str], condition: str) -> List[str]:
     # convert to boolean
     processed = []
     for x in out:
-        print(x)
+        # print(x)
         x_lower = x.lower().split('final answer:')[-1].strip()
         if x_lower.startswith('yes'):
             processed.append(True)

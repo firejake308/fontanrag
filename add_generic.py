@@ -42,7 +42,7 @@ def add_generic(condition_name: str, column_name: str):
             if len(llm_batch) == 16:
                 vals = extract_boolean(llm_batch, condition_name)
                 for i, (fname, val) in enumerate(zip(llm_files, vals)):
-                    print(fname, val)
+                    # print(fname, val)
                     file_data.append({
                         'file_name': fname,
                         'val': val,

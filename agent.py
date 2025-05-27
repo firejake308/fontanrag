@@ -146,7 +146,7 @@ llm_cfg = {
 }
 
 # Step 3: Create an agent. Here we use the `Assistant` agent as an example, which is capable of using tools and reading files.
-system_instruction = '''You are a research assistant who has access to a large corpus of pediatric cardiology notes for patients who have undergone or will undergo the Fontan procedure. You also have access to a SQLite database with several structured fields that have been extracted from the notes already.'''
+system_instruction = '''You are a research assistant who has access to a large corpus of pediatric cardiology notes for patients who have undergone or will undergo the Fontan procedure. You also have access to a SQLite database with several structured fields that have been extracted from the notes already, and you should check the database before using the deep_extract_condition tool.'''
 tools = ['deep_extract_condition', 'search_notes', 'get_database_structure', 'query_database']
 bot = Assistant(llm=llm_cfg,
                 system_message=system_instruction,
