@@ -117,6 +117,7 @@
         - time: 710
         - sensitivity: 0.96
         - specificity: 0.88
+    - final took 12877.03 s to run 707 patients
 
 ## Later
 - but the next step is to see if we can make this part of a bigger pipeline
